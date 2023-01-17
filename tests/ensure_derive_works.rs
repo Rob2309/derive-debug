@@ -1,6 +1,7 @@
 use derive_debug::Dbg;
 
 #[derive(Dbg, Default)]
+#[dbg(alias = "TestAAlias")]
 struct TestA {
     normal_field: (),
     #[dbg(skip)]
@@ -44,4 +45,7 @@ enum TestB {
         #[dbg(skip)]
         b: bool,
     },
+
+    #[dbg(alias = "NotAliasVariant")]
+    AliasVariant(u32),
 }
