@@ -16,7 +16,7 @@ fn test_a_output() {
 
     assert_eq!(
         format!("{:?}", a),
-        "TestA { normal_field: (), placeholder_field: ... }"
+        "TestAAlias { normal_field: (), placeholder_field: ... }"
     );
 }
 

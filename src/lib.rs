@@ -10,15 +10,85 @@ use syn::{
 ///
 /// # Field Options
 /// - `#[dbg(skip)]` completely omits a field in the output
+/// ```rust
+///     use derive_debug::Dbg;
+/// 
+///     #[derive(Dbg)]
+///     struct Foo {
+///         field_a: bool,
+///         #[dbg(skip)]
+///         field_b: u32,
+///     }
+/// 
+///     // Outputs: Foo { field_a: true }
+/// ```
 /// - `#[dbg(placeholder = "xyz")]` will print `xyz` instead of the actual contents of a field
+/// ```rust
+///     use derive_debug::Dbg;
+/// 
+///     #[derive(Dbg)]
+///     struct Foo {
+///         field_a: bool,
+///         #[dbg(placeholder = "...")]
+///         field_b: u32,
+///     }
+/// 
+///     // Outputs: Foo { field_a: true, field_b: ... }
+/// ```
 /// - `#[dbg(alias = "some_alias")]` will print `some_alias` as field name instead of the real name
+/// ```rust
+///     use derive_debug::Dbg;
+/// 
+///     #[derive(Dbg)]
+///     struct Foo {
+///         field_a: bool,
+///         #[dbg(alias="not_field_b")]
+///         field_b: u32,
+///     }
+/// 
+///     // Outputs: Foo { field_a: true, not_field_b: 42 }
+/// ```
 ///
 /// # Enum Variant Options
 /// - `#[dbg(skip)]` only prints the name of the variant and omits its contents
+/// ```rust
+///     use derive_debug::Dbg;
+/// 
+///     #[derive(Dbg)]
+///     enum Foo {
+///         #[dbg(skip)]
+///         SomeVariant{a: bool, b: u32},
+///     }
+/// 
+///     // Outputs: SomeVariant
+/// ```
 /// - `#[dbg(alias = "some_alias")]` will use `some_alias` as variant name instead of the real name
+/// ```rust
+///     use derive_debug::Dbg;
+/// 
+///     #[derive(Dbg)]
+///     enum Foo {
+///         #[dbg(alias = "NotSomeVariant")]
+///         SomeVariant{a: bool, b: u32},
+///     }
+/// 
+///     // Outputs: NotSomeVariant { a: true, b: 42 }
+/// ```
 ///
 /// # struct Options
 /// - `#[dbg(alias = "MyAlias")]` will use `MyAlias` as struct name instead of the real name
+/// ```rust
+///     use derive_debug::Dbg;
+/// 
+///     #[derive(Dbg)]
+///     #[dbg(alias = "NotFoo")]
+///     struct Foo {
+///         field_a: bool,
+///         field_b: u32,
+///     }
+/// 
+///     // Outputs: NotFoo { field_a: true, not_field_b: 42 }
+/// ```
 #[proc_macro_derive(Dbg, attributes(dbg))]
 pub fn derive_debug(target: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let item = parse_macro_input!(target as DeriveInput);
