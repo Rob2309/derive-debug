@@ -1,7 +1,14 @@
 [package]
 name = "derive-debug"
 version = "0.1.0"
+authors = [ "Robin Quint" ]
 edition = "2021"
+description = "Customizable derive macro for Debug trait"
+repository = "https://github.com/Rob2309/derive-debug"
+license = "MIT"
+keywords = [ "derive", "debug" ]
+categories = [ "development-tools", "development-tools::debugging" ]
+exclude = [ ".vscode" ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
