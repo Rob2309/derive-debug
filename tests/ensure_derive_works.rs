@@ -1,4 +1,4 @@
-#![allow(unused)]
+#![allow(unused, clippy::enum_variant_names, clippy::disallowed_names)]
 
 use derive_debug::Dbg;
 

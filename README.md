@@ -13,7 +13,7 @@ use derive_debug::Dbg;
 struct Foo {
     field_a: u32,
     #[dbg(placeholder = "...")]
-    field_b: SomeOtherType // will be printed as "field_b: ..."
+    field_b: Vec<u32>, // will be printed as "field_b: ..."
     #[dbg(skip)]
     field_c: bool, // will be left out
     #[dbg(alias = "my_string")]
