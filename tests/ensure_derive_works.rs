@@ -14,11 +14,16 @@ struct TestStruct {
     placeholder_field: u32,
     #[dbg(alias = "alias_placeholder_field_alias", placeholder = "abc")]
     alias_placeholder_field: u32,
+    #[dbg(fmt = "{:#06X}")]
+    fmt_field: u32,
 }
 
 #[test]
 fn test_struct() {
-    let foo = TestStruct::default();
+    let foo = TestStruct {
+        fmt_field: 0xAB,
+        ..TestStruct::default()
+    };
 
     assert_eq!(
         format!("\n{:#?}\n", foo),
@@ -28,6 +33,7 @@ TestStructAlias {
     alias_field_alias: 0,
     placeholder_field: ...,
     alias_placeholder_field_alias: abc,
+    fmt_field: 0x00AB,
 }
 "#
     );
@@ -37,21 +43,30 @@ TestStructAlias {
 enum TestEnum {
     UnitVariant,
     TupleVariant(u32, u32),
-    StructVariant{a: u32, b: u32},
+    StructVariant {
+        a: u32,
+        b: u32,
+    },
 
     #[dbg(skip)]
     SkippedUnitVariant,
     #[dbg(skip)]
     SkippedTupleVariant(u32, u32),
     #[dbg(skip)]
-    SkippedStructVariant{a: u32, b: u32},
+    SkippedStructVariant {
+        a: u32,
+        b: u32,
+    },
 
     #[dbg(alias = "AliasVariant")]
     AliasedUnitVariant,
     #[dbg(alias = "AliasVariant")]
     AliasedTupleVariant(u32, u32),
     #[dbg(alias = "AliasVariant")]
-    AliasedStructVariant{a: u32, b: u32},
+    AliasedStructVariant {
+        a: u32,
+        b: u32,
+    },
 }
 
 #[test]

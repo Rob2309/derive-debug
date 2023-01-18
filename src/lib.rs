@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
     parse_macro_input, Attribute, DataEnum, DataStruct, DeriveInput, Fields, FieldsNamed,
-    FieldsUnnamed, Ident, Lit, Meta, MetaNameValue, NestedMeta, Variant,
+    FieldsUnnamed, Ident, Lit, Meta, MetaNameValue, NestedMeta, Variant, LitStr,
 };
 
 /// Derive macro generating an implementation of [`Debug`](std::fmt::Debug)
@@ -209,6 +209,14 @@ fn derive_named_fields(fields: &FieldsNamed, use_self: bool) -> Result<TokenStre
             FieldPrintType::Placeholder(placeholder) => {
                 res.extend(quote! { .field(#name_str, &format_args!(#placeholder)) })
             }
+            FieldPrintType::Format(fmt) => {
+                let field_ref = if use_self {
+                    quote! { self.#name }
+                } else {
+                    quote! { #name }
+                };
+                res.extend(quote! { .field(#name_str, &format_args!(#fmt, #field_ref)) })
+            }
             FieldPrintType::Skip => {}
         }
     }
@@ -237,6 +245,14 @@ fn derive_unnamed_fields(
             FieldPrintType::Placeholder(placeholder) => {
                 res.extend(quote! { .field(&format_args!(#placeholder)) })
             }
+            FieldPrintType::Format(fmt) => {
+                let field_ref = if use_self {
+                    quote! { self.#i }
+                } else {
+                    format_ident!("field_{}", i).to_token_stream()
+                };
+                res.extend(quote! { .field(&format_args!(#fmt, #field_ref)) })
+            }
             FieldPrintType::Skip => {}
         }
     }
@@ -248,6 +264,7 @@ enum FieldPrintType {
     Normal,
     Placeholder(String),
     Skip,
+    Format(LitStr),
 }
 
 struct FieldOutputOptions {
@@ -310,6 +327,16 @@ fn parse_options(
                     ..
                 })) if path.is_ident("alias") && target != OptionsTarget::UnnamedField => {
                     res.alias = Some(alias.value())
+                }
+                NestedMeta::Meta(Meta::NameValue(MetaNameValue {
+                    path,
+                    lit: Lit::Str(fmt),
+                    ..
+                })) if path.is_ident("fmt")
+                    && (target == OptionsTarget::NamedField
+                        || target == OptionsTarget::UnnamedField) =>
+                {
+                    res.print_type = FieldPrintType::Format(fmt)
                 }
                 _ => return Err(syn::Error::new_spanned(option, "invalid option")),
             }

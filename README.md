@@ -18,6 +18,8 @@ struct Foo {
     field_c: bool, // will be left out
     #[dbg(alias = "my_string")]
     field_d: u32, // will be printed as "my_string: 42"
+    #[dbg(fmt = "{:#06X}")]
+    field_e: u32, // will be printed with the specified format
 }
 ```
 
@@ -76,6 +78,19 @@ enum Foo {
     }
 
     // Outputs: Foo { field_a: true, not_field_b: 42 }
+```
+- `#[dbg(fmt = "{:#06X}")]` will print the field with the specified format
+```rust
+    use derive_debug::Dbg;
+
+    #[derive(Dbg)]
+    struct Foo {
+        field_a: bool,
+        #[dbg(fmt = "{:#06X}")]
+        field_b: u32,
+    }
+
+    // Outputs: Foo { field_a: true, field_b: 0x002A }
 ```
 
 ### Enum Variant Options
