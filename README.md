@@ -92,6 +92,24 @@ enum Foo {
 
     // Outputs: Foo { field_a: true, field_b: 0x002A }
 ```
+- `#[dbg(formatter = "my_func")]` will print the field using the specified function.  
+The function has to return a type that can be formatted using "{}"
+```rust
+    use derive_debug::Dbg;
+
+    #[derive(Dbg)]
+    struct Foo(u32, #[dbg(formatter = "fmt_not_zero")] u32);
+
+    fn fmt_not_zero(v: &u32) -> &'static str {
+        if *v == 0 {
+            "0"
+        } else {
+            "not 0"
+        }
+    }
+
+    // Outputs: Foo(42, not 0)
+```
 
 ### Enum Variant Options
 - `#[dbg(skip)]` only prints the name of the variant and omits its contents
