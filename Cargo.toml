@@ -1,6 +1,6 @@
 [package]
 name = "derive-debug"
-version = "0.1.0"
+version = "0.1.1"
 authors = [ "Robin Quint" ]
 edition = "2021"
 description = "Customizable derive macro for Debug trait"
