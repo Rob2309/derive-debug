@@ -40,6 +40,24 @@ TestStructAlias {
 }
 
 #[derive(Dbg)]
+struct TestTuple(u32, #[dbg(formatter = "fmt_not_zero")] u32);
+
+fn fmt_not_zero(v: &u32) -> &'static str {
+    if *v == 0 {
+        "0"
+    } else {
+        "not 0"
+    }
+}
+
+#[test]
+fn test_tuple() {
+    let foo = TestTuple(42, 17);
+
+    assert_eq!(format!("{:?}", foo), "TestTuple(42, not 0)");
+}
+
+#[derive(Dbg)]
 enum TestEnum {
     UnitVariant,
     TupleVariant(u32, u32),

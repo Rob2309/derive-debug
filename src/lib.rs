@@ -3,8 +3,8 @@
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
-    parse_macro_input, Attribute, DataEnum, DataStruct, DeriveInput, Fields, FieldsNamed,
-    FieldsUnnamed, Ident, Lit, Meta, MetaNameValue, NestedMeta, Variant, LitStr,
+    parse_macro_input, Attribute, DataEnum, DataStruct, DeriveInput, Fields,
+    FieldsNamed, FieldsUnnamed, Ident, Lit, LitStr, Meta, MetaNameValue, NestedMeta, Path, Variant,
 };
 
 /// Derive macro generating an implementation of [`Debug`](std::fmt::Debug)
@@ -54,17 +54,27 @@ fn derive_debug_impl(item: DeriveInput) -> TokenStream {
 }
 
 fn derive_struct(display_name: &str, data: &DataStruct) -> Result<TokenStream, syn::Error> {
-    let fields = match &data.fields {
-        Fields::Named(fields) => derive_named_fields(fields, true)?,
-        Fields::Unnamed(fields) => derive_unnamed_fields(fields, true)?,
-        Fields::Unit => quote! {},
-    };
-
-    Ok(quote! {
-        f.debug_struct(#display_name)
-            #fields
-            .finish()
-    })
+    match &data.fields {
+        Fields::Named(fields) => {
+            let fields = derive_named_fields(fields, true)?;
+            Ok(quote! {
+                f.debug_struct(#display_name)
+                    #fields
+                    .finish()
+            })
+        }
+        Fields::Unnamed(fields) => {
+            let fields = derive_unnamed_fields(fields, true)?;
+            Ok(quote! {
+                f.debug_tuple(#display_name)
+                    #fields
+                    .finish()
+            })
+        }
+        Fields::Unit => Ok(quote! {
+            f.debug_struct(#display_name).finish()
+        }),
+    }
 }
 
 fn derive_enum(data: &DataEnum) -> Result<TokenStream, syn::Error> {
@@ -217,6 +227,14 @@ fn derive_named_fields(fields: &FieldsNamed, use_self: bool) -> Result<TokenStre
                 };
                 res.extend(quote! { .field(#name_str, &format_args!(#fmt, #field_ref)) })
             }
+            FieldPrintType::Custom(formatter) => {
+                let field_ref = if use_self {
+                    quote! { &self.#name }
+                } else {
+                    quote! { #name }
+                };
+                res.extend(quote! { .field(#name_str, &format_args!("{}", #formatter(#field_ref))) })
+            }
             FieldPrintType::Skip => {}
         }
     }
@@ -236,7 +254,8 @@ fn derive_unnamed_fields(
         match options.print_type {
             FieldPrintType::Normal => {
                 let field_ref = if use_self {
-                    quote! { &self.#i }
+                    let index = syn::Index::from(i);
+                    quote! { &self.#index }
                 } else {
                     format_ident!("field_{}", i).to_token_stream()
                 };
@@ -247,11 +266,21 @@ fn derive_unnamed_fields(
             }
             FieldPrintType::Format(fmt) => {
                 let field_ref = if use_self {
-                    quote! { self.#i }
+                    let index = syn::Index::from(i);
+                    quote! { self.#index }
                 } else {
                     format_ident!("field_{}", i).to_token_stream()
                 };
                 res.extend(quote! { .field(&format_args!(#fmt, #field_ref)) })
+            }
+            FieldPrintType::Custom(formatter) => {
+                let field_ref = if use_self {
+                    let index = syn::Index::from(i);
+                    quote! { &self.#index }
+                } else {
+                    format_ident!("field_{}", i).to_token_stream()
+                };
+                res.extend(quote! { .field(&format_args!("{}", #formatter(#field_ref))) });
             }
             FieldPrintType::Skip => {}
         }
@@ -265,6 +294,7 @@ enum FieldPrintType {
     Placeholder(String),
     Skip,
     Format(LitStr),
+    Custom(Path),
 }
 
 struct FieldOutputOptions {
@@ -337,6 +367,17 @@ fn parse_options(
                         || target == OptionsTarget::UnnamedField) =>
                 {
                     res.print_type = FieldPrintType::Format(fmt)
+                }
+                NestedMeta::Meta(Meta::NameValue(MetaNameValue {
+                    path,
+                    lit: Lit::Str(custom),
+                    ..
+                })) if path.is_ident("formatter")
+                    && (target == OptionsTarget::NamedField
+                        || target == OptionsTarget::UnnamedField) =>
+                {
+                    let path = syn::parse_str::<Path>(&custom.value()).map_err(|e| syn::Error::new(custom.span(), e.to_string()))?;
+                    res.print_type = FieldPrintType::Custom(path);
                 }
                 _ => return Err(syn::Error::new_spanned(option, "invalid option")),
             }
